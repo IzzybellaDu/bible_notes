@@ -1,323 +1,160 @@
 # Bible Notes App — Product & Technical Specification (v1)
 
 ## 1. Overview
-
-A web app (responsive and installable as a PWA) for personal Bible study notes using the **Swedish Method**. Each note captures a **key idea**, a **question**, and an **application** for a passage.
-
-Notes are organized both by structured Bible reference (**Book → Chapter → Verse**) and by freeform tags.
-
-Users can add mutual friends and see each other's non-private notes. When a friend has also noted the same passage, the user receives a lightweight notification. This does **not** create a merged or side-by-side view.
-
----
+A web app (responsive, installable as a PWA) for personal Bible study notes using the **Swedish Method** — each note captures a **key idea**, a **question**, and an **application** for a passage. Notes are organized both by structured Bible reference (Book > Chapter > Verse) and by freeform tags. Users can add mutual friends and see each other's non-private notes; when a friend has also noted the same passage, the user gets a lightweight notification (not a merged view).
 
 ## 2. Goals for v1
+- Fast, frictionless note capture in the Swedish Method format
+- Structured + tag-based organization and browsing
+- Mutual-friend social layer with sensible privacy defaults
+- Simple "someone else has notes here" notification
+- Ship as a responsive web app / PWA
 
-* Fast, frictionless note capture in the Swedish Method format
-* Structured and tag-based organization and browsing
-* Mutual-friend social layer with sensible privacy defaults
-* Simple "someone else has notes here" notification
-* Ship as a responsive web app / PWA
-
----
-
-## 3. Explicitly Out of Scope for v1
-
-See [Section 12](#12-future-ideas-v2) for later features.
-
-* Native mobile app
-* Group/Bible study circles (only 1:1 mutual friends for now)
-* Side-by-side or threaded comparison of notes
-* Multiple/licensed Bible translations (ESV, NIV, etc.)
-* Reading plans, streaks, reminders
-* Comments/discussion threads on shared notes
-* Social login (Google/Apple)
-
----
+## 3. Explicitly out of scope for v1 (see Section 10 for later)
+- Native mobile app
+- Group/Bible study circles (only 1:1 mutual friends for now)
+- Side-by-side or threaded comparison of notes
+- Multiple/licensed Bible translations (ESV, NIV, etc.)
+- Reading plans, streaks, reminders
+- Comments/discussion threads on shared notes
+- Social login (Google/Apple)
 
 ## 4. User Stories
+- As a user, I want to write a note on a passage as dot points for key idea(s), question(s), and application(s).
+- As a user, I want to tag a note with the Bible reference and my own custom topic tags.
+- As a user, I want to browse my notes by book/chapter or by tag.
+- As a user, I want to add friends (both people must accept).
+- As a user, I want my notes visible to friends by default, but I can mark any note private.
+- As a user, I want to know, without digging, when a friend has also written notes on a passage.
 
-* As a user, I want to write a note on a passage as dot points for key idea(s), question(s), and application(s).
-* As a user, I want to tag a note with the Bible reference and my own custom topic tags.
-* As a user, I want to browse my notes by book/chapter or by tag.
-* As a user, I want to add friends, where both people must accept the request.
-* As a user, I want my notes visible to friends by default, but I can mark any note private.
-* As a user, I want to know, without digging, when a friend has also written notes on a passage.
+## 5. Core Features
 
----
-
-# 5. Core Features
-
-## 5.1 Notes (Swedish Method)
-
+### 5.1 Notes (Swedish Method)
 Each note has:
+- **Passage reference**: book, chapter, verse start, verse end (optional, can be a single verse or range)
+- **Key idea(s)**: list of dot points
+- **Question(s)**: list of dot points
+- **Application(s)**: list of dot points
+- **Tags**: freeform array of strings (e.g. "faith", "sermon-notes", "Romans study")
+- **Visibility**: `private` or `friends` (default: `friends`)
+- **Timestamps**: created_at, updated_at
 
-* **Passage reference**
+UI: each of the three fields (key idea / question / application) is an editable bullet list — add, edit, delete, reorder points.
 
-  * Book
-  * Chapter
-  * Verse start
-  * Verse end (optional)
-  * Can represent a single verse or a verse range
-* **Key idea(s)** — list of dot points
-* **Question(s)** — list of dot points
-* **Application(s)** — list of dot points
-* **Tags** — freeform array of strings
+### 5.2 Passage Reference & Bible Text
+- Verse picker: book dropdown → chapter → verse range.
+- Actual verse text is fetched from a free, public-domain Bible API (see Section 8) and displayed alongside the note editor for context — not stored long-term, just cached client-side/short-term server-side to reduce API calls.
+- The reference is stored in a structured form (book id, chapter, verse_start, verse_end) so notes can be queried and sorted properly, not just as a free-text string.
 
-  * Examples: `faith`, `sermon-notes`, `Romans study`
-* **Visibility**
+### 5.3 Organization & Browsing
+- **Structured view**: browse by Book → Chapter, seeing all your notes on that chapter.
+- **Tag view**: filter/search notes by custom tag.
+- Combine both: a structured browser with a tag filter sidebar/search bar.
 
-  * `private`
-  * `friends`
-  * Default: `friends`
-* **Timestamps**
+### 5.4 Friends
+- Search for other users by username or email.
+- Send a friend request; both users must accept (mutual, like Facebook).
+- Friends list page with pending requests (incoming/outgoing) and an unfriend option.
 
-  * `created_at`
-  * `updated_at`
+### 5.5 Sharing & Privacy
+- Default visibility for a new note: **visible to friends**.
+- Per-note toggle to mark it **private** at any time.
+- Friends can view (read-only) each other's non-private notes, browsable the same way (by book/chapter or tag).
+- Private notes must never be returned by any API call to another user, under any circumstance.
 
-### UI
+### 5.6 "Notes exist here" Notification
+- When a user creates or opens a note on passage X, the system checks whether any of their friends have non-private notes on that same passage.
+- If so, show a simple notification/badge (e.g. "Sarah also has notes on John 3") — **no automatic side-by-side or merged view**, just an alert that points the user toward the existence of the other notes.
+- A notification center (bell icon) lists these events; users can mark them as read.
 
-Each of the three Swedish Method fields is an editable bullet list:
+### 5.7 Auth
+- Email/password signup and login only (no social login in v1).
+- Passwords hashed with bcrypt; sessions via JWT or secure httpOnly cookie.
+- Basic password-reset-via-email flow.
 
-* Add bullet
-* Edit bullet
-* Delete bullet
-* Reorder bullets
+## 6. Data Model
 
----
-
-## 5.2 Passage Reference & Bible Text
-
-* Verse picker:
-
-  * Book dropdown
-  * Chapter selector
-  * Verse range selector
-* Actual verse text is fetched from a free, public-domain Bible API and displayed alongside the note editor for context.
-* Bible text is **not stored long-term**.
-* Bible text may be cached client-side and/or short-term server-side to reduce API calls.
-* The passage reference is stored in a structured form so notes can be queried and sorted correctly rather than relying on a free-text reference.
-
-### Stored Reference
-
-```text
-book_id
-chapter
-verse_start
-verse_end
 ```
-
----
-
-## 5.3 Organization & Browsing
-
-### Structured View
-
-Browse notes by:
-
-```text
-Book → Chapter → Notes
-```
-
-### Tag View
-
-* Filter notes by custom tag
-* Search notes by tag
-
-### Combined View
-
-A structured browser containing:
-
-* Book/chapter navigation
-* Tag filter sidebar
-* Search bar
-
----
-
-## 5.4 Friends
-
-Users can:
-
-* Search for other users by username or email
-* Send friend requests
-* Accept incoming friend requests
-* View pending incoming requests
-* View pending outgoing requests
-* View their friends list
-* Unfriend another user
-
-Both users must accept the friendship request before they become mutual friends.
-
----
-
-## 5.5 Sharing & Privacy
-
-* New notes are **visible to friends by default**.
-* Each note can be changed to **private** at any time.
-* Friends can view each other's non-private notes in read-only mode.
-* Friends can browse shared notes using:
-
-  * Book/chapter
-  * Tags
-* Private notes must **never** be returned by an API call to another user under any circumstances.
-
----
-
-## 5.6 "Notes Exist Here" Notification
-
-When a user creates or opens a note for passage **X**, the system checks whether any of their friends have non-private notes on the same passage.
-
-If so, display a lightweight notification such as:
-
-> Sarah also has notes on John 3.
-
-The system should **not** automatically display the friend's note alongside the user's note.
-
-### Notification Center
-
-A notification center accessible through a bell icon should:
-
-* List relevant events
-* Show when a friend has notes on the same passage
-* Allow users to mark notifications as read
-
----
-
-## 5.7 Authentication
-
-### Supported in v1
-
-* Email/password signup
-* Email/password login
-* Logout
-* Password reset via email
-
-### Security
-
-* Passwords hashed using **bcrypt**
-* Sessions handled using either:
-
-  * JWT, or
-  * Secure `httpOnly` cookies
-
-Social login is out of scope for v1.
-
----
-
-# 6. Data Model
-
-## User
-
-```text
 User
-  id
-  name
-  email
-  password_hash
-  created_at
-```
+  id, name, email, password_hash, created_at
 
-## Friendship
-
-```text
 Friendship
-  id
-  user_id_a
-  user_id_b
-  status (pending | accepted)
-  requested_by
-  created_at
-```
+  id, user_id_a, user_id_b, status (pending | accepted), requested_by, created_at
 
-## Note
-
-```text
 Note
-  id
-  user_id
-  book
-  chapter
-  verse_start
-  verse_end
-  key_ideas: string[]
-  questions: string[]
-  applications: string[]
-  tags: string[]
-  visibility (private | friends)
-  created_at
-  updated_at
-```
+  id, user_id, book, chapter, verse_start, verse_end,
+  key_ideas: string[], questions: string[], applications: string[],
+  tags: string[], visibility (private | friends),
+  created_at, updated_at
 
-## Notification
-
-```text
 Notification
-  id
-  user_id
-  type (friend_note_exists | friend_request | ...)
-  related_note_id
-  related_friend_id
-  passage_ref
-  read (bool)
-  created_at
+  id, user_id, type (friend_note_exists | friend_request | ...),
+  related_note_id, related_friend_id, passage_ref, read (bool), created_at
 ```
 
----
+## 7. API Endpoints (REST sketch)
 
-# 7. API Endpoints
+**Auth**
+- `POST /auth/signup`
+- `POST /auth/login`
+- `POST /auth/logout`
+- `POST /auth/reset-password`
 
-## Authentication
+**Notes**
+- `GET /notes` (own notes; query params: book, chapter, tag)
+- `POST /notes`
+- `GET /notes/:id`
+- `PUT /notes/:id`
+- `DELETE /notes/:id`
+- `GET /notes/friends?book=&chapter=` (friends' visible notes for a passage)
 
-| Method | Endpoint               | Description       |
-| ------ | ---------------------- | ----------------- |
-| `POST` | `/auth/signup`         | Create an account |
-| `POST` | `/auth/login`          | Log in            |
-| `POST` | `/auth/logout`         | Log out           |
-| `POST` | `/auth/reset-password` | Reset password    |
+**Friends**
+- `GET /friends`
+- `POST /friends/request` (body: target user)
+- `POST /friends/:id/accept`
+- `DELETE /friends/:id`
 
-## Notes
+**Bible text (proxy/cache)**
+- `GET /bible/:book/:chapter`
 
-| Method   | Endpoint                        | Description                              |
-| -------- | ------------------------------- | ---------------------------------------- |
-| `GET`    | `/notes`                        | Get user's own notes                     |
-| `POST`   | `/notes`                        | Create a note                            |
-| `GET`    | `/notes/:id`                    | Get a specific note                      |
-| `PUT`    | `/notes/:id`                    | Update a note                            |
-| `DELETE` | `/notes/:id`                    | Delete a note                            |
-| `GET`    | `/notes/friends?book=&chapter=` | Get friends' visible notes for a passage |
+**Notifications**
+- `GET /notifications`
+- `POST /notifications/:id/read`
 
-### `/notes` Query Parameters
+## 8. Bible Text Source
+Recommendation: start with a **free, public-domain translation** via an API with no licensing fees or strict rate limits — e.g. `bible-api.com` or `bolls.life`, serving translations like WEB, KJV, or ASV. This avoids licensing costs while validating the product. Modern copyrighted translations (ESV, NIV, NLT) can be added later once there's a reason to pay for/license them — the app's data model already stores structured references, so swapping or adding a translation source later doesn't require a redesign.
 
-```text
-book
-chapter
-tag
-```
+## 9. Screens / Pages
+1. **Login / Signup**
+2. **Dashboard** — recent notes, notification feed
+3. **Note editor** — create/edit a note (passage picker, verse text panel, three dot-point fields, tags, visibility toggle)
+4. **Note browser** — by book/chapter, with tag filter
+5. **Passage viewer** — verse text + your note (if any) + "friend also has notes" badge
+6. **Friends** — friends list, pending requests, add-friend search
+7. **Settings** — account details, default note visibility preference
 
----
+## 10. Tech Stack Recommendation
+- **Frontend**: React (Vite), React Router, Tailwind CSS
+- **Backend**: Node.js + Express, **or** Supabase (Postgres + built-in Auth) to significantly cut backend build time
+- **Database**: PostgreSQL
+- **Auth**: bcrypt password hashing + JWT/cookie sessions (or Supabase Auth if using Supabase)
+- **Bible text**: bible-api.com or bolls.life, server-side cached
+- **Hosting**: Vercel (frontend) + Railway/Render (backend+DB), or Vercel + Supabase for an all-in-one fast path
+- **PWA**: web manifest + service worker so it's installable on mobile home screens
 
-## Friends
+*Note: since you're not locked into a specific backend, Supabase is worth strongly considering — it gives you Postgres, auth, and row-level-security-based privacy (great fit for the private/friends visibility model) largely out of the box, cutting a lot of the backend work described in Section 7.*
 
-| Method   | Endpoint              | Description                      |
-| -------- | --------------------- | -------------------------------- |
-| `GET`    | `/friends`            | Get friends and pending requests |
-| `POST`   | `/friends/request`    | Send a friend request            |
-| `POST`   | `/friends/:id/accept` | Accept a friend request          |
-| `DELETE` | `/friends/:id`        | Remove a friendship              |
+## 11. Non-Functional Requirements
+- Mobile-first responsive design (usable down to ~360px width)
+- Private notes are never exposed via any API response to another user
+- Bible text responses cached to respect external API rate limits
+- Basic accessibility: semantic HTML, keyboard-navigable forms
 
----
-
-## Bible Text
-
-| Method | Endpoint                | Description      |
-| ------ | ----------------------- | ---------------- |
-| `GET`  | `/bible/:book/:chapter` | Fetch Bible text |
-
-The backend should proxy/cache requests to the external Bible API to reduce API calls and respect rate limits.
-
----
-
-## Notifications
-
-| Method | Endpoint | Description |
-| ------ | -------- | ----------- |
-| `GET`  | `/noti   |             |
+## 12. Future Ideas (v2+, not in scope now)
+- Native mobile app (React Native, reusing the same API)
+- Bible study groups/circles beyond 1:1 friends
+- Side-by-side or threaded note comparison on a shared passage
+- Additional/licensed translations (ESV, NIV)
+- Reading plans, streaks, reminders
+- Comments/discussion on shared notes
+- Google/Apple social login
