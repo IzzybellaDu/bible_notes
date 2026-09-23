@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased font-sans min-h-screen selection:bg-emerald-500/30 selection:text-emerald-200;
+  }
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  @apply bg-slate-900/70 backdrop-blur-md border border-slate-800/80 shadow-xl rounded-2xl;
+}
+
+.glass-card {
+  @apply bg-slate-900/50 backdrop-blur-sm border border-slate-800/60 hover:border-emerald-500/40 transition-all duration-200 rounded-xl;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Swedish Method Badges */
+.badge-key-idea {
+  @apply bg-amber-500/10 text-amber-300 border border-amber-500/30 font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 text-xs;
+}
+
+.badge-question {
+  @apply bg-sky-500/10 text-sky-300 border border-sky-500/30 font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 text-xs;
+}
+
+.badge-application {
+  @apply bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 text-xs;
+}
